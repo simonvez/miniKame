@@ -13,31 +13,32 @@ void MiniKame::init(){
     board_pins[7] = D3; // Servo S7
 
     // Trim values for zero position calibration.
-    trim[0] = 0;
-    trim[1] = -8;
-    trim[2] = 8;
-    trim[3] = 5;
-    trim[4] = 2;
-    trim[5] = -6;
-    trim[6] = 6;
-    trim[7] = 5;
+    trim[0] = -8;
+    trim[1] = 5;
+    trim[2] = 0;
+    trim[3] = 0;
+    trim[4] = 8;
+    trim[5] = 8;
+    trim[6] = -8;
+    trim[7] = 8;
 
     // Set reverse movement
-    for (int i=0; i<8; i++) reverse[i] = false;
+    for (int i=0; i<8; i++) reverse[i] = true;
 
     // Init an oscillator for each servo
     for(int i=0; i<8; i++){
         oscillator[i].start();
         servo[i].attach(board_pins[i]);
     }
-    zero();
+    zero();  // Make sure this is zero() not home()
+    delay(100);  // Add a small delay to ensure servos reach position
 }
 
 void MiniKame::turnR(float steps, int T=600){
     int x_amp = 15;
-    int z_amp = 15;
+    int z_amp = 25;
     int ap = 15;
-    int hi = 23;
+    int hi = 30;
     int period[] = {T, T, T, T, T, T, T, T};
     int amplitude[] = {x_amp,x_amp,z_amp,z_amp,x_amp,x_amp,z_amp,z_amp};
     int offset[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
@@ -48,9 +49,9 @@ void MiniKame::turnR(float steps, int T=600){
 
 void MiniKame::turnL(float steps, int T=600){
     int x_amp = 15;
-    int z_amp = 15;
+    int z_amp = 25;
     int ap = 15;
-    int hi = 23;
+    int hi = 30;
     int period[] = {T, T, T, T, T, T, T, T};
     int amplitude[] = {x_amp,x_amp,z_amp,z_amp,x_amp,x_amp,z_amp,z_amp};
     int offset[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
@@ -73,14 +74,14 @@ void MiniKame::dance(float steps, int T=600){
 }
 
 void MiniKame::frontBack(float steps, int T=600){
-    int x_amp = 30;
-    int z_amp = 25;
-    int ap = 20;
-    int hi = 30;
+    int x_amp = 30;      // Large horizontal movement (30)
+    int z_amp = 25;      // Vertical movement (25)
+    int ap = 20;         // Hip position
+    int hi = 30;         // Height
     int period[] = {T, T, T, T, T, T, T, T};
     int amplitude[] = {x_amp,x_amp,z_amp,z_amp,x_amp,x_amp,z_amp,z_amp};
     int offset[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
-    int phase[] = {0,180,270,90,0,180,90,270};
+    int phase[] = {0,180,270,90,0,180,90,270};  // Phase timing creates rocking motion
 
     execute(steps, period, amplitude, offset, phase);
 }
@@ -142,7 +143,7 @@ void MiniKame::omniWalk(float steps, int T, bool side, float turn_factor){
     execute(steps, period, amplitude, offset, phase);
 }
 
-void MiniKame::moonwalkL(float steps, int T=5000){
+void MiniKame::moonwalkL(float steps, int T=4000){
     int z_amp = 45;
     int period[] = {T, T, T, T, T, T, T, T};
     int amplitude[] = {0,0,z_amp,z_amp,0,0,z_amp,z_amp};
@@ -154,7 +155,7 @@ void MiniKame::moonwalkL(float steps, int T=5000){
 
 void MiniKame::walk(float steps, int T=5000){
     int x_amp = 15;
-    int z_amp = 20;
+    int z_amp = 30;
     int ap = 20;
     int hi = 10;
     int front_x = 12;
@@ -200,6 +201,7 @@ void MiniKame::walk(float steps, int T=5000){
         delay(1);
     }
 }
+
 
 void MiniKame::upDown(float steps, int T=5000){
     int x_amp = 0;
@@ -260,26 +262,41 @@ void MiniKame::hello(){
 
 
 void MiniKame::jump(){
-    float sentado[]={90+15,90-15,90-65,90+65,90+20,90-20,90+10,90-10};
-    float ap = 20.0;
-    float hi = 35.0;
-    float salto[] = {90+ap,90-ap,90-hi,90+hi,90-ap*3,90+ap*3,90+hi,90-hi};
-    moveServos(150, sentado);
-    delay(200);
-    moveServos(0, salto);
-    delay(100);
-    home();
+    // Prepare for jump - crouch position
+    float crouch[] = {
+        90+30, 90-30,  // Hip joints wider
+        90-60, 90+60,  // Feet tucked in more
+        90-30, 90+30,  // Back hips wider
+        90+60, 90-60   // Back feet tucked
+    };
+    
+    // Jump position - extended
+    float jump[] = {
+        90+20, 90-20,  // Hips slightly in
+        90-20, 90+20,  // Feet extended out
+        90-20, 90+20,  // Back hips in
+        90+20, 90-20   // Back feet extended
+    };
+    
+    // Execute jump sequence
+    moveServos(200, crouch);    // Crouch down quickly
+    delay(100);                 // Brief pause to "load" the jump
+    moveServos(50, jump);       // Extend rapidly (jumping motion)
+    delay(200);                 // Stay in air
+    moveServos(200, crouch);    // Land in crouch position
+    delay(100);                 // Absorb landing
+    home();                     // Return to standing
 }
 
 void MiniKame::home(){
     int ap = 20;
     int hi = 35;
-    int position[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
+    int position[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};  // Stable standing position
     for (int i=0; i<8; i++) setServo(i, position[i]);
 }
 
 void MiniKame::zero(){
-    for (int i=0; i<8; i++) setServo(i, 90);
+    for (int i=0; i<8; i++) setServo(i, 90);  // All servos to 90°
 }
 
 void MiniKame::reverseServo(int id){
@@ -343,5 +360,18 @@ void MiniKame::execute(float steps, int period[8], int amplitude[8], int offset[
 }
 
 int MiniKame::angToUsec(float value){
-    return value/180 * (MAX_PULSE_WIDTH-MIN_PULSE_WIDTH) + MIN_PULSE_WIDTH;
+    return value/180 * (DEFAULT_MAX_PULSE_WIDTH-DEFAULT_MIN_PULSE_WIDTH) + DEFAULT_MIN_PULSE_WIDTH;
+}
+
+void MiniKame::spinDance(float steps, int T){
+    int x_amp = 15;
+    int z_amp = 35;
+    int ap = 30;    // Wider stance for stability
+    int hi = 25;
+    int period[] = {T, T, T, T, T, T, T, T};
+    int amplitude[] = {x_amp,x_amp,z_amp,z_amp,x_amp,x_amp,z_amp,z_amp};
+    int offset[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
+    int phase[] = {0,0,90,270,180,180,270,90};  // Creates spinning motion
+
+    execute(steps, period, amplitude, offset, phase);
 }

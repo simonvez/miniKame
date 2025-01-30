@@ -22,11 +22,18 @@ public:
     void home();
     void zero();
     void frontBack(float steps, int period);
+    void spinDance(float steps, int T=1000);
 
     void setServo(int id, float target);
     void reverseServo(int id);
     float getServo(int id);
     void moveServos(int time, float target[8]);
+
+    bool isMoving = false;
+    unsigned long moveStartTime = 0;
+    int currentMove = 0;  // 0=none, 1=walk, 3=turnL, 4=turnR, etc.
+
+    void updateMovement();  // Call this frequently to update movement
 
 private:
     Oscillator oscillator[8];

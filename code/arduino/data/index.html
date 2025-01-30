@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MiniKame Control</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .movement-controls {
+            background: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .special-moves {
+            background: #fff;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        button {
+            width: 100%;
+            aspect-ratio: 1;
+            font-size: 16px;
+            border-radius: 15px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s;
+            touch-action: manipulation;
+            padding: 10px;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .button-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+        }
+        .icon {
+            font-size: 36px;
+            line-height: 1;
+        }
+        .label {
+            font-size: 14px;
+        }
+        .move-btn .icon {
+            font-size: 48px;
+        }
+        .stop-btn {
+            background: #f44336;
+        }
+        .special-btn {
+            background: #2196F3;
+        }
+        .move-btn {
+            background: #4CAF50;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 10px;
+            background: #e0e0e0;
+            font-weight: bold;
+        }
+        h2 {
+            margin: 10px 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MiniKame Control</h1>
+        <div id="status">Not Connected</div>
+        
+        <div class="movement-controls">
+            <h2>Movement Controls</h2>
+            <div class="grid">
+                <button onclick="sendCommand('3')" title="Turn Left" class="move-btn">
+                    <div class="button-content">
+                        <div class="icon">↺</div>
+                        <div class="label">Turn Left</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('1')" title="Walk Forward" class="move-btn">
+                    <div class="button-content">
+                        <div class="icon">↑</div>
+                        <div class="label">Forward</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('4')" title="Turn Right" class="move-btn">
+                    <div class="button-content">
+                        <div class="icon">↻</div>
+                        <div class="label">Turn Right</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('12')" title="Moonwalk" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">🕴️</div>
+                        <div class="label">Moonwalk</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('5')" title="Stop" class="stop-btn">
+                    <div class="button-content">
+                        <div class="icon">■</div>
+                        <div class="label">STOP</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('13')" title="Run" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">🏃</div>
+                        <div class="label">Run</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="special-moves">
+            <h2>Special Moves</h2>
+            <div class="grid">
+                <button onclick="sendCommand('6')" title="Push Ups" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">💪</div>
+                        <div class="label">Push Ups</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('7')" title="Up Down" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">↕️</div>
+                        <div class="label">Up Down</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('8')" title="Jump" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">⤒</div>
+                        <div class="label">Jump</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('9')" title="Hello" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">👋</div>
+                        <div class="label">Hello</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('10')" title="Rock" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">↔️</div>
+                        <div class="label">Rock</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('11')" title="Dance" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">💃</div>
+                        <div class="label">Dance</div>
+                    </div>
+                </button>
+                <button onclick="sendCommand('14')" title="Spin Dance" class="special-btn">
+                    <div class="button-content">
+                        <div class="icon">💫</div>
+                        <div class="label">Spin Dance</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        function connect() {
+            ws = new WebSocket('ws://' + window.location.hostname + ':81');
+            
+            ws.onopen = function() {
+                document.getElementById('status').innerHTML = 'Connected';
+                document.getElementById('status').style.background = '#90EE90';
+                reconnectAttempts = 0;
+            };
+            
+            ws.onclose = function() {
+                document.getElementById('status').innerHTML = 'Disconnected';
+                document.getElementById('status').style.background = '#FFB6C1';
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    setTimeout(connect, 1000);
+                }
+            };
+            
+            ws.onerror = function() {
+                document.getElementById('status').innerHTML = 'Connection Error';
+                document.getElementById('status').style.background = '#FFB6C1';
+            };
+        }
+
+        function sendCommand(cmd) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(cmd + '+');
+            } else {
+                document.getElementById('status').innerHTML = 'Not Connected - Trying HTTP';
+                fetch('/' + cmd + '+')
+                    .then(response => {
+                        if (response.ok) {
+                            document.getElementById('status').innerHTML = 'HTTP Command Sent';
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('status').innerHTML = 'Command Failed';
+                    });
+            }
+        }
+
+        // Initial connection
+        connect();
+    </script>
+</body>
+</html> 
