@@ -8,7 +8,7 @@
 
 // Wifi Access Point configuration
 const char* ssid = "vzkame";
-const char* password = "kickass.sim";
+const char* password = "*******";
 
 MiniKame robot;
 WebSocketsServer webSocket = WebSocketsServer(81);  // WebSocket on port 81
